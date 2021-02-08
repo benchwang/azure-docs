@@ -140,17 +140,13 @@ For example, the log file `70_driver_log.txt` contains information from the cont
 
 Because of the distributed nature of ParallelRunStep jobs, there are logs from several different sources. However, two consolidated files are created that provide high-level information:
 
-- `~/logs/job_progress_overview.txt`: This file provides a high-level info about the number of mini-batches (also known as tasks) created so far and number of mini-batches processed so far. At this end, it shows the result of the job. If the job failed, it will show the error message and where to start the troubleshooting.
+- `~/logs/job_progress_overview.<timestamp>.txt`: This file provides a high-level info about the number of mini-batches (also known as tasks) created so far and number of mini-batches processed so far. At this end, it shows the result of the job. If the job failed, it will show the error message and where to start the troubleshooting. This file name has year, month and day in UTC timezone. A new file will be generated for each day to keep one file in user friendly size.
 
-- `~/logs/sys/master_role.txt`: This file provides the principal node (also known as the orchestrator) view of the running job. Includes task creation, progress monitoring, the run result.
+- `~/logs/sys/master_role.<timestamp>.<node ip>.txt`: This file provides the master role (also known as the orchestrator) view of the running job. Includes task creation, progress monitoring, the run result. One node will acquire the master role when the job starts. If the master role or the node running the master role failed, another will acquire the master role. A new master role will generate a new log file.
 
 Logs generated from entry script using EntryScript helper and print statements will be found in following files:
 
-- `~/logs/user/entry_script_log/<ip_address>/<process_name>.log.txt`: These files are the logs written from entry_script using EntryScript helper.
-
-- `~/logs/user/stdout/<ip_address>/<process_name>.stdout.txt`: These files are the logs from stdout (e.g. print statement) of entry_script.
-
-- `~/logs/user/stderr/<ip_address>/<process_name>.stderr.txt`: These files are the logs from stderr of entry_script.
+- `~/logs/user/<node ip>/<node_name>.log.txt`: These files are the logs written from entry_script using EntryScript helper. Also contains print statement (stdout) from entry_script.
 
 For a concise understanding of errors in your script there is:
 
@@ -158,17 +154,26 @@ For a concise understanding of errors in your script there is:
 
 For more information on errors in your script, there is:
 
-- `~/logs/user/error/`: Contains full stack traces of exceptions thrown while loading and running entry script.
+- `~/logs/user/error/`: Contains all errors thrown and full stack traces organized by node.
 
 When you need a full understanding of how each node executed the score script, look at the individual process logs for each node. The process logs can be found in the `sys/node` folder, grouped by worker nodes:
 
-- `~/logs/sys/node/<ip_address>/<process_name>.txt`: This file provides detailed info about each mini-batch as it's picked up or completed by a worker. For each mini-batch, this file includes:
+- `~/logs/sys/node/<node_name>.txt`: This file provides detailed info about each mini-batch as it's picked up or completed by a worker. For each mini-batch, this file includes:
 
-    - The IP address and the PID of the worker process. 
+    - The IP address and the PID of the worker process.
     - The total number of items, successfully processed items count, and failed item count.
     - The start time, duration, process time and run method time.
 
-You can also find information on the resource usage of the processes for each worker. This information is in CSV format and is located at `~/logs/sys/perf/<ip_address>/node_resource_usage.csv`. Information about each process is available under `~logs/sys/perf/<ip_address>/processes_resource_usage.csv`.
+You can also find periodical checking results of the resource usage for each node here:
+- `~/logs/perf`: Set `--resource_monitor_interval` to change the checking interval in seconds. The default interval is `600`, which is approximate to 10 minutes. Set the value to `0` to stop the monitoring. Each `<node ip>` folder includes:
+
+    - `os/`: The information of all running processes in the node. In one check, it runs an operating system command and save the result to a file. On Linux, the command is 'ps'. On Windows, it is 'tasklist'.
+        - `%Y%m%d%H`: The sub folder has time to hour as its name.
+            - `processes_%M`: The file ends with the minute of the checking time.
+    - node_disk_usage.csv: Detailed disk usage of the node.
+    - node_resource_usage.csv: Resource usage overview of the node.
+    - processes_resource_usage.csv : Resource usage overview of each process.
+
 
 ### How do I log from my user script from a remote context?
 
